@@ -8,10 +8,10 @@ const addFail = (h, message) => {
   return responseTemplate(h, body, 400);
 };
 
-const notFound = (h) => {
+const notFound = (h, message = 'Buku tidak ditemukan') => {
   const body = {
     status: 'fail',
-    message: 'Buku tidak ditemukan',
+    message,
   };
   return responseTemplate(h, body, 404);
 };
@@ -24,17 +24,8 @@ const updateFail = (h, message) => {
   return responseTemplate(h, body, 400);
 };
 
-const deleteFail = (h, message) => {
-  const body = {
-    status: 'fail',
-    message,
-  };
-  return responseTemplate(h, body, 400);
-};
-
 module.exports = {
   addFail,
   notFound,
   updateFail,
-  deleteFail,
 };

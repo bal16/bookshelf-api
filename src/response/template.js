@@ -1,6 +1,6 @@
 const responseTemplate = (h, body, code) => {
   const response = h.response({
-    body,
+    ...body,
   });
   response.code(code);
   return response;

@@ -1,6 +1,7 @@
-const books = require('./data/books');
+const books = require('./books');
 const { generateId } = require('./libs');
 const Response = require('./response');
+const { generateCurrentTime, hasContains, formatIndex } = require('./services');
 
 const addBook = (request, h) => {
   const {
@@ -11,7 +12,6 @@ const addBook = (request, h) => {
     publisher,
     pageCount,
     readPage,
-    finished,
     reading,
   } = request.payload;
   if (!name)
@@ -21,7 +21,7 @@ const addBook = (request, h) => {
       h,
       'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount'
     );
-  const insertedAt = new Date().toISOString();
+  const insertedAt = generateCurrentTime();
   const updatedAt = insertedAt;
   const newBook = {
     id: generateId(),
@@ -32,7 +32,7 @@ const addBook = (request, h) => {
     publisher,
     pageCount,
     readPage,
-    finished,
+    finished: pageCount == readPage || false,
     reading,
     insertedAt,
     updatedAt,
@@ -43,28 +43,32 @@ const addBook = (request, h) => {
 };
 
 const getAllBook = (request, h) => {
-  const indexedBooks = books;
-  //   const { name, reading, finished } = request.query;
-  //   let indexedBooks = books;
-  //   if (name) {
-  //     indexedBooks = books.filter((book) => (book.name) === decodeURI(name));
-  //     if (indexedBooks.length === 0) return Response.notFound(h);
-  //     return Response.indexSuccess(h, indexedBooks);
-  //   }
+  const { name, reading, finished } = request.query;
+  if (name) {
+    const indexedBooks = books.filter((book) => hasContains(book.name, name));
+    if (books.length === 0) return Response.notFound(h);
+    return Response.indexSuccess(h, formatIndex(indexedBooks));
+  }
 
-  //   if (reading) {
-  //     indexedBooks = books.filter((book) => book.reading === true);
-  //     if (indexedBooks.length === 0) return Response.notFound(h);
-  //     return Response.indexSuccess(h, indexedBooks);
-  //   }
+  if (reading) {
+    // console.log(typeof reading);
+    const indexedBooks = books.filter(
+      (book) => Number(book.reading) === Number(reading)
+    );
+    if (books.length === 0) return Response.notFound(h);
+    return Response.indexSuccess(h, formatIndex(indexedBooks));
+  }
 
-  //   if (finished) {
-  //     indexedBooks = books.filter((book) => book.finished === true);
-  //     if (indexedBooks.length === 0) return Response.notFound(h);
-  //     return Response.indexSuccess(h, indexedBooks);
-  //   }
+  if (finished) {
+    // console.log(typeof finished);
+    const indexedBooks = books.filter(
+      (book) => Number(book.finished) === Number(finished)
+    );
+    if (books.length === 0) return Response.notFound(h);
+    return Response.indexSuccess(h, formatIndex(indexedBooks));
+  }
 
-  return Response.indexSuccess(h, indexedBooks);
+  return Response.indexSuccess(h, books);
 };
 
 const getBookById = (request, h) => {
@@ -76,6 +80,7 @@ const getBookById = (request, h) => {
 
 const editBookById = (request, h) => {
   const { id } = request.params;
+
   const {
     name,
     year,
@@ -84,19 +89,27 @@ const editBookById = (request, h) => {
     publisher,
     pageCount,
     readPage,
-    finished,
     reading,
   } = request.payload;
+
   if (!name)
-    return Response.updateFail(h, 'Gagal memperbarui buku. Mohon isi nama buku');
+    return Response.updateFail(
+      h,
+      'Gagal memperbarui buku. Mohon isi nama buku'
+    );
+
   if (readPage > pageCount)
     return Response.updateFail(
       h,
       'Gagal memperbarui buku. readPage tidak boleh lebih besar dari pageCount'
     );
-  const updatedAt = new Date().toISOString();
+
+  const updatedAt = generateCurrentTime();
   const bookIndex = books.findIndex((book) => book.id === id);
-  if (bookIndex === -1) return Response.notFound(h);
+
+  if (bookIndex === -1)
+    return Response.notFound(h, 'Gagal memperbarui buku. Id tidak ditemukan');
+
   books[bookIndex] = {
     ...books[bookIndex],
     name,
@@ -106,11 +119,27 @@ const editBookById = (request, h) => {
     publisher,
     pageCount,
     readPage,
-    finished,
+    finished: pageCount == readPage || false,
     reading,
     updatedAt,
   };
+
   return Response.updateSuccess(h);
 };
 
-module.exports = { addBook, getAllBook, getBookById, editBookById };
+const deleteBookById = (request, h) => {
+  const { id } = request.params;
+  const bookIndex = books.findIndex((book) => book.id === id);
+  if (bookIndex === -1)
+    return Response.notFound(h, 'Buku gagal dihapus. Id tidak ditemukan');
+  books.splice(bookIndex, 1);
+  return Response.deleteSuccess(h);
+};
+
+module.exports = {
+  addBook,
+  getAllBook,
+  getBookById,
+  editBookById,
+  deleteBookById,
+};
