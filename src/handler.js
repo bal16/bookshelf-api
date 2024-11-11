@@ -14,13 +14,16 @@ const addBook = (request, h) => {
     readPage,
     reading,
   } = request.payload;
+
   if (!name)
     return Response.addFail(h, 'Gagal menambahkan buku. Mohon isi nama buku');
+
   if (readPage > pageCount)
     return Response.addFail(
       h,
       'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount'
     );
+
   const insertedAt = generateCurrentTime();
   const updatedAt = insertedAt;
   const newBook = {
@@ -51,7 +54,6 @@ const getAllBook = (request, h) => {
   }
 
   if (reading) {
-    // console.log(typeof reading);
     const indexedBooks = books.filter(
       (book) => Number(book.reading) === Number(reading)
     );
@@ -60,7 +62,6 @@ const getAllBook = (request, h) => {
   }
 
   if (finished) {
-    // console.log(typeof finished);
     const indexedBooks = books.filter(
       (book) => Number(book.finished) === Number(finished)
     );
@@ -68,7 +69,7 @@ const getAllBook = (request, h) => {
     return Response.indexSuccess(h, formatIndex(indexedBooks));
   }
 
-  return Response.indexSuccess(h, books);
+  return Response.indexSuccess(h, formatIndex(books));
 };
 
 const getBookById = (request, h) => {
